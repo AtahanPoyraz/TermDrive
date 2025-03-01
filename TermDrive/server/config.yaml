@@ -1,0 +1,38 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+  timeouts:
+    read_timeout: 10
+    write_timeout: 10
+    idle_timeout: 120
+    read_header_timeout: 10
+
+term_drive:
+  storage_path: "../Storage"
+  upload_size: 5242880
+  
+cors:
+  allowed_origins:
+    - "*"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "PATCH"
+    - "DELETE"
+  allowed_headers:
+    - "application/json"
+    - "Authorization"
+
+database:
+  driver: "postgres"
+  host: "localhost"
+  port: 5433
+  name: "postgres"
+  user: "myuser"
+  password: "changeme"
+  ssl_mode: "disable"
+  time_zone: "Asia/Istanbul"
+
+security:
+  jwt_secret_key: "aP%4s7E!m92X@xJ8cYf#d3zL6"

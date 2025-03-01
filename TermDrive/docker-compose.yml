@@ -1,0 +1,20 @@
+services:
+  server_db:
+    image: postgres:latest
+    container_name: ${CONTAINER_NAME} 
+    ports:
+      - "${DATABASE_PORT}:5432"
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}       
+      POSTGRES_USER: ${DATABASE_USER}     
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}   
+    volumes:
+      - data:/var/lib/postgresql/data  
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]  
+      interval: 10s                          
+      timeout: 5s                            
+      retries: 5                             
+
+volumes:
+  data:  
