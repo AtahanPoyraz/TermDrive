@@ -1,5 +1,5 @@
 services:
-  server_db:
+  database:
     image: postgres:latest
     container_name: ${CONTAINER_NAME} 
     ports:
@@ -14,7 +14,24 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]  
       interval: 10s                          
       timeout: 5s                            
-      retries: 5                             
+      retries: 5  
 
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: server
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DB_HOST: ${CONTAINER_NAME}
+      DB_PORT: ${DATABASE_PORT}
+      DB_NAME: ${DATABASE_NAME}
+      DB_USER: ${DATABASE_USER}
+      DB_PASSWORD: ${DATABASE_PASSWORD}
+                               
 volumes:
   data:  

@@ -40,7 +40,7 @@ var (
 func init() {
 	logger = log.New(os.Stdout, "Server API -> ", log.LstdFlags)
 
-	configuration, err = config.LoadConfig("config.yaml")
+	configuration, err = config.LoadConfig("server/config.yaml")
 	if err != nil {
 		logger.Fatalf("Error loading configuration: %v\n", err)
 	}

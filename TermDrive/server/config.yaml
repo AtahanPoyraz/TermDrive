@@ -26,8 +26,8 @@ cors:
 
 database:
   driver: "postgres"
-  host: "localhost"
-  port: 5433
+  host: "database"
+  port: 5432
   name: "postgres"
   user: "myuser"
   password: "changeme"

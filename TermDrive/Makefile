@@ -26,8 +26,16 @@ run-server:
 
 # 'create-admim' target: Create admin user.
 create-admin:
-	cd server && go run main.go --option createadmin --username $(USERNAME) --email $(EMAIL) --password $(PASSWORD)
+	docker compose exec server sh -c "./termdrive --option createadmin --username $(USERNAME) --email $(EMAIL) --password $(PASSWORD)"
 
 # 'connect-db' target: Connects to the PostgreSQL database inside the Docker container using psql command.
 connect-db:
 	docker compose exec -it ${CONTAINER_NAME} psql -U ${DATABASE_USER} -d ${DATABASE_NAME}
+
+SOURCE=/usr/bin/protobuf-31.0/src
+INPUT_DIR=./server/internal/protos
+OUTPUT_DIR=./server/internal/pb
+PROTO_FILE=./server/internal/protos/user_service.proto
+
+proto-out:
+	protoc -I $(SOURCE) -I $(INPUT_DIR) --go_out=$(OUTPUT_DIR) $(PROTO_FILE)

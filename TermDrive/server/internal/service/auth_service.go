@@ -9,6 +9,7 @@ import (
 	"github.com/AtahanPoyraz/TermDrive/server/internal/dto"
 	"github.com/AtahanPoyraz/TermDrive/server/internal/model"
 	"github.com/AtahanPoyraz/TermDrive/server/internal/model/enum"
+	"github.com/AtahanPoyraz/TermDrive/server/internal/pb"
 	"github.com/AtahanPoyraz/TermDrive/server/internal/repository"
 	"github.com/AtahanPoyraz/TermDrive/server/util/fsutil"
 	"golang.org/x/crypto/bcrypt"
@@ -18,7 +19,7 @@ import (
 // AuthService defines the methods for user authentication and management.
 type AuthService interface {
 	Me(request *dto.MeRequest) (model.UserModel, error)
-	SignUp(request *dto.SignUpRequest) error
+	SignUp(request *pb.CreateUserRequest) error
 	SignIn(request *dto.SignInRequest) (model.UserModel, error)
 }
 
@@ -44,14 +45,14 @@ func (s *AuthServiceImpl) Me(request *dto.MeRequest) (model.UserModel, error) {
 
 // SignUp registers a new user and sets up their directory.
 // Returns: An error if the user creation or directory setup fails.
-func (s *AuthServiceImpl) SignUp(request *dto.SignUpRequest) error {
-	if err := s.userRepository.CreateUser(request.Username, request.Email, request.Password, enum.ROLE_USER, true); err != nil {
+func (s *AuthServiceImpl) SignUp(request *pb.CreateUserRequest) error {
+	if err := s.userRepository.CreateUser(request.FirstName, request.Email, request.Password, enum.ROLE_USER, true); err != nil {
 		return err
 	}
 
-	dirPath := filepath.Join(s.configuration.TermDrive.StoragePath, request.Username)
+	dirPath := filepath.Join(s.configuration.TermDrive.StoragePath, request.FirstName)
 	if err := fsutil.Create(dirPath); err != nil {
-		user, fetchErr := s.userRepository.FetchUserByUsername(request.Username)
+		user, fetchErr := s.userRepository.FetchUserByUsername(request.FirstName)
 		if fetchErr != nil {
 			return fmt.Errorf("failed to create directory and could not fetch user for deletion: %w", fetchErr)
 		}

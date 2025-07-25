@@ -3,14 +3,17 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
 	"github.com/AtahanPoyraz/TermDrive/server/config"
 	"github.com/AtahanPoyraz/TermDrive/server/internal/dto"
 	"github.com/AtahanPoyraz/TermDrive/server/internal/model"
+	"github.com/AtahanPoyraz/TermDrive/server/internal/pb"
 	"github.com/AtahanPoyraz/TermDrive/server/internal/service"
 	"github.com/go-playground/validator/v10"
+	"google.golang.org/protobuf/proto"
 )
 
 var authValidator = validator.New()
@@ -69,43 +72,54 @@ func (h *AuthHandlerImpl) MeHandler(w http.ResponseWriter, r *http.Request) {
 	}, w)
 }
 
-// SignUpHandler handles user registration requests, validating and creating a new user.
 func (h *AuthHandlerImpl) SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	var request dto.SignUpRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		h.logger.Printf("Invalid request payload: %v.\n", err)
-		h.sendResponse(&dto.GenericResponse{
-			StatusCode: http.StatusBadRequest,
-			Message:    "Invalid request format",
-			Data:       err.Error(),
-		}, w)
-	}
+	defer r.Body.Close()
 
-	if err := authValidator.Struct(request); err != nil {
-		h.logger.Printf("Validation failed: %v.\n", err)
-		h.sendResponse(&dto.GenericResponse{
-			StatusCode: http.StatusBadRequest,
-			Message:    "Invalid input data",
-			Data:       err.Error(),
-		}, w)
+	// HTTP isteğinin gövdesini oku (protobuf formatında gelen ikili veri)
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
 
+	// Gönderilen protobuf ikili verisini Go struct'ına dönüştür (unmarshal)
+	var request pb.CreateUserRequest
+	if err := proto.Unmarshal(bodyBytes, &request); err != nil {
+		http.Error(w, "Invalid protobuf data", http.StatusBadRequest)
+		return
+	}
+
+	// Kullanıcı kayıt işlemini servise devret
 	if err := h.authService.SignUp(&request); err != nil {
 		h.logger.Printf("User registration failed: %v.\n", err)
-		h.sendResponse(&dto.GenericResponse{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "User registration failed",
-			Data:       err.Error(),
-		}, w)
+		http.Error(w, "User registration failed", http.StatusInternalServerError)
 		return
 	}
 
 	h.logger.Printf("User %s successfully registered.\n", request.Email)
-	h.sendResponse(&dto.GenericResponse{
+
+	// Kayıt başarılıysa, yanıt olarak protobuf formatında veri hazırla
+	response := &pb.CreateUserResponse{
 		StatusCode: http.StatusCreated,
 		Message:    "User registered successfully. Please sign in to continue.",
-	}, w)
+		Data:       nil,
+	}
+
+	// Go struct'ını protobuf ikili verisine çevir (marshal)
+	data, err := proto.Marshal(response)
+	if err != nil {
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+
+	// HTTP yanıt başlığına içerik tipini protobuf olarak belirt
+	w.Header().Set("Content-Type", "application/protobuf")
+	w.WriteHeader(http.StatusCreated)
+
+	// İkili protobuf verisini HTTP yanıtına yaz
+	if _, err := w.Write(data); err != nil {
+		h.logger.Printf("Failed to write response: %v", err)
+	}
 }
 
 // SignInHandler handles user sign-in requests and generates a JWT token for the user.

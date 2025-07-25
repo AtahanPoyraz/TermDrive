@@ -1,0 +1,37 @@
+// .proto dosyasının versiyonu. En güncel olan 'proto3' kullanılıyor.
+syntax = "proto3";
+
+// Paket adı. Genellikle servis adını yansıtır ve namespace görevi görür.
+package user_service;
+
+
+// Google tarafından sağlanan 'Any' mesajını import ediyoruz.
+// Bu sayede her türde veri taşıyabiliriz.
+import "google/protobuf/any.proto";
+
+// Go diline özel ayar. Kod üretimi sırasında paket ismini belirtiyor.
+// Buradaki değer, go modülünde kullanılacak olan path'tir.
+option go_package = "github.com/AtahanPoyraz/TermDrive/server/internal/pb";
+
+// Kullanıcı oluşturma isteği için gerekli alanları taşıyan mesaj.
+message CreateUserRequest {
+    string firstName = 1;   // Kullanıcının adı
+    string lastName = 2;    // Kullanıcının soyadı
+    string email = 3;       // Kullanıcının e-posta adresi
+    string password = 4;    // Kullanıcının şifresi (şifreleme backend'de yapılır)
+}
+
+// Kullanıcı oluşturma işlemi sonrası dönecek yanıt mesajı.
+message CreateUserResponse {
+    int64 statusCode = 1;           // HTTP benzeri durum kodu (örneğin 200, 400 vs.)
+    string message = 2;             // Kullanıcıya bilgi veren mesaj (örnek: "Başarılı")
+    google.protobuf.Any data = 3;   // Ek veri taşımak için kullanılan alan (örnek: user objesi)
+}
+
+// Servis tanımı. RPC fonksiyonları burada tanımlanır.
+// Backend tarafında bu servise karşılık gelen metodlar yazılır.
+service UserService {
+    // CreateUser fonksiyonu, bir CreateUserRequest alır ve CreateUserResponse döner.
+    // Bu işlem, kullanıcı kaydını oluşturmak içindir.
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+}
